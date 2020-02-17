@@ -867,6 +867,7 @@ debug.init(skynet, {
 local vscdebug = require "skynet.vscdebug"
 vscdebug.init(skynet, {
 	suspend = suspend,
+	resume = coroutine_resume,
 })
 
 return skynet

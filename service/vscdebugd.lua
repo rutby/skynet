@@ -159,10 +159,14 @@ function request.setBreakpoints(req)
     local bpinfos = {}
     local bps = {}
     for _, bp in ipairs(args.breakpoints) do
+        local logmsg
+        if bp.logMessage and bp.logMessage ~= "" then
+            logmsg = bp.logMessage .. '\n'
+        end
         bpinfos[#bpinfos+1] = {
             source = {path = src},
             line = bp.line,
-            logMessage = bp.logMessage,
+            logMessage = logmsg,
             condition = bp.condition,
             hitCount = calc_hitcount(bp.hitCondition),
             currHitCount = 0,
@@ -294,6 +298,9 @@ function request.disconnect(req)
     send_event("output", {
         category = "console",
         output = "Lua Debugger stop!\n",
+    })
+    send_event("exited", {
+        exitCode = 0,
     })
     skynet.abort()
     return true

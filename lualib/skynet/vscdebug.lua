@@ -1,7 +1,9 @@
 local skynet_suspend
+local coroutine_resume
 
 local function init(skynet, import)
     skynet_suspend = import.suspend
+    coroutine_resume = import.resume
     if skynet.getenv("vscdbg_open") ~= "on" or skynet.getenv("logger") ~= "vscdebuglog" then
         return 
     end
@@ -108,7 +110,7 @@ local function start()
         local frames = {}
         local level = 0
         while level < maxlevel do
-            local info = debug.getinfo(co, level, "Slnt")
+            local info = debug.getinfo(co, level, "Sln")
             if not info then
                 break
             end
@@ -135,7 +137,7 @@ local function start()
                 elseif info.currentline then
                     frame.line = info.currentline
                 else
-                    frame.line = 1
+                    frame.line = 0
                 end
                 frames[#frames+1] = frame
             end
@@ -336,7 +338,7 @@ local function start()
             state = ST_RUNNING
             local co = debug_ctx.co
             debug_ctx = nil
-            skynet_suspend(co, coroutine.resume(co))
+            skynet_suspend(co, coroutine_resume(co))
         end
     end
 
@@ -358,7 +360,7 @@ local function start()
         if debug_ctx then
             local co = debug_ctx.co
             debug_ctx = nil
-            skynet_suspend(co, coroutine.resume(co))
+            skynet_suspend(co, coroutine_resume(co))
         end
     end
 
@@ -372,7 +374,7 @@ local function start()
             elseif type == "stepover" then
                 state = ST_STEP_OVER
             end
-            skynet_suspend(debug_ctx.co, coroutine.resume(debug_ctx.co))
+            skynet_suspend(debug_ctx.co, coroutine_resume(debug_ctx.co))
         end
     end
 

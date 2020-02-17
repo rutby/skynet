@@ -1,5 +1,5 @@
 root = "$vscdbg_workdir/"
-thread = 2
+thread = 4
 logger = "vscdebuglog"
 logservice = "snlua"
 
@@ -16,4 +16,3 @@ snax = root.."examples/?.lua;"..root.."test/?.lua"
 cpath = root.."cservice/?.so"
 
 vscdbg_open = "$vscdbg_open"
--- vscdbg_open = true
