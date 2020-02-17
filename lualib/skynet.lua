@@ -863,4 +863,10 @@ debug.init(skynet, {
 	suspend = suspend,
 })
 
+-- vscode debug
+local vscdebug = require "skynet.vscdebug"
+vscdebug.init(skynet, {
+	suspend = suspend,
+})
+
 return skynet
