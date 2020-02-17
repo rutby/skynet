@@ -7,7 +7,6 @@
 #include "lauxlib.h"
 #include "lstate.h"
 #include "atomic.h"
-#include <unistd.h>
 
 static const int HOOKKEY = 0;
 

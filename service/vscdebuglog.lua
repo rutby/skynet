@@ -11,13 +11,13 @@ local function send_event(event, body)
         body = body,
     }
     local output = io.stdout
-    local ok, content = pcall(cjson.encode, res)
+    local ok, msg = pcall(cjson.encode, res)
     if ok then
-        local data = string.format("Content-Length: %s\r\n\r\n%s\n", #content, content)
+        local data = string.format("Content-Length: %s\r\n\r\n%s\n", #msg, msg)
         output:write(data)
         output:flush()
     else
-        output:write(string.format("send_event - error: %s\n", req))
+        output:write(string.format("send_event - error: %s\n", msg))
     end
 end
 

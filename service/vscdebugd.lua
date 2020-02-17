@@ -64,15 +64,15 @@ local function send_response(cmd, succ, rseq, content)
         message = message,
     }
     local output = io.stdout
-    local ok, content = pcall(cjson.encode, res)
+    local ok, msg = pcall(cjson.encode, res)
     if ok then
-        local data = string.format("Content-Length: %s\r\n\r\n%s\n", #content, content)
+        local data = string.format("Content-Length: %s\r\n\r\n%s\n", #msg, msg)
         if output:write(data) then
             output:flush()
             return true
         end
     else
-        skynet.error("send_response - error", req)
+        skynet.error("send_response - error", msg)
     end
 end
 
@@ -84,15 +84,15 @@ local function send_event(event, body)
         body = body,
     }
     local output = io.stdout
-    local ok, content = pcall(cjson.encode, res)
+    local ok, msg = pcall(cjson.encode, res)
     if ok then
-        local data = string.format("Content-Length: %s\r\n\r\n%s\n", #content, content)
+        local data = string.format("Content-Length: %s\r\n\r\n%s\n", #msg, msg)
         if output:write(data) then
             output:flush()
             return true
         end
     else
-        skynet.error("send_event - error", req)
+        skynet.error("send_event - error", msg)
     end
 end
 
@@ -154,7 +154,7 @@ local function calc_hitcount(hitexpr)
 end
 
 function request.setBreakpoints(req)
-    args = req.arguments
+    local args = req.arguments
     local src = args.source.path
     local bpinfos = {}
     local bps = {}
@@ -320,7 +320,6 @@ function command.pause(addr, reason)
         skynet.call(addr, "debug", "vsccmd", "pause_res", false)
     else
         debug_addr = addr
-        state = ST_PAUSE
         skynet.call(addr, "debug", "vsccmd", "pause_res", true)
         send_event("stopped", {
             reason = reason,

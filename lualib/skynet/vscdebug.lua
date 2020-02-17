@@ -74,7 +74,7 @@ local function start()
     
     local function check_condition(ctx, cond)
         if cond and cond ~= "" then
-            local ok, res = injectrun("return "..cond, co, 3)
+            local ok, res = injectrun("return "..cond, ctx.co, 3)
             return (not ok) or res
         else
             return true
