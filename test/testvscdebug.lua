@@ -32,7 +32,8 @@ end
 if mode == "slave" then -----------------------------------------
 
 skynet.start(function()
-    skynet.dispatch("lua", function(_,_, ...)
+	skynet.dispatch("lua", function(_,_, ...)
+		dosomething()
 		skynet.fork(function()
 			while true do
 				skynet.sleep(10)
