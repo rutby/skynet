@@ -362,16 +362,19 @@ local function start()
     end
 
     function vsccmd.continue()
+        local oldstate = state
         state = ST_RUNNING
         if debug_ctx then
             local co = debug_ctx.co
             debug_ctx = nil
-            skynet_suspend(co, coroutine_resume(co))
+            if oldstate == ST_PAUSE then
+                skynet_suspend(co, coroutine_resume(co))
+            end
         end
     end
 
     function vsccmd.next(type)
-        if debug_ctx then
+        if debug_ctx and state == ST_PAUSE then
             debug_ctx.plevel = debug_ctx.level
             if type == "stepin" then
                 state = ST_STEP_IN
