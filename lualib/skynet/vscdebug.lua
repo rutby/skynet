@@ -4,7 +4,7 @@ local coroutine_resume
 local function init(skynet, import)
     skynet_suspend = import.suspend
     coroutine_resume = import.resume
-    if skynet.getenv("vscdbg_open") ~= "on" or skynet.getenv("logger") ~= "vscdebuglog" then
+    if skynet.getenv("vscdbg_open") == nil or skynet.getenv("logger") ~= "vscdebuglog" then
         return 
     end
 
@@ -34,7 +34,8 @@ end
 
 local function start()
     local skynet = require "skynet"
-    if skynet.getenv("vscdbg_open") ~= "on" then
+    local openmode = skynet.getenv("vscdbg_open")
+    if openmode == nil then
         return 
     end
 
@@ -83,6 +84,18 @@ local function start()
         end
     end
 
+    local function eval_log_message(ctx, log)
+        return string.gsub(log, "({.-})", function(expr)
+            if #expr >= 2 then
+                expr = expr:sub(2, -2)
+                local ok, res = injectrun("return ".. expr, ctx.co, 5)
+                return ok and res or ""
+            else
+                return ""
+            end
+        end)
+    end
+
     local function breakpoints_hittest(ctx, source, line)
         source = (string.find(source, "@", 1, true) == 1) and source:sub(2) or source
         local bps = breakpoints[source]
@@ -93,8 +106,9 @@ local function start()
                         bp.currHitCount = bp.currHitCount + 1
                         if bp.currHitCount > bp.hitCount then
                             bp.currHitCount = 0
-                            if bp.logMessage then
-                                skynet.send(vscdebugd, "lua", "output", "console", bp.logMessage, source, line)
+                            if bp.logMessage and bp.logMessage ~= "" then
+                                local log = eval_log_message(ctx, bp.logMessage)
+                                skynet.send(vscdebugd, "lua", "output", "console", log, source, line)
                                 return false
                             end
                             return true
@@ -106,7 +120,7 @@ local function start()
         return false
     end
 
-    local function get_traceback(co, maxlevel, pauseline)
+    local function get_traceback(co, maxlevel)
         local frames = {}
         local level = 0
         while level < maxlevel do
@@ -132,13 +146,7 @@ local function start()
                 else
                     frame.source = {presentationHint = "deemphasize"}
                 end
-                if level == 0 then
-                    frame.line = pauseline
-                elseif info.currentline then
-                    frame.line = info.currentline
-                else
-                    frame.line = 0
-                end
+                frame.line = info.currentline
                 frames[#frames+1] = frame
             end
             level = level + 1
@@ -264,7 +272,6 @@ local function start()
                     co = co,
                     level = 0,
                     plevel = -1,
-                    pauseline = 0,
                 }
                 co_ctxs[co] = ctx
             end
@@ -313,7 +320,6 @@ local function start()
                 debug_ctx = ctx
                 state = ST_PAUSE
                 ctx.plevel = -1
-                ctx.pauseline = line
                 skynet.send(vscdebugd, "lua", "pause", reason)
                 return true  -- yield
             end
@@ -380,7 +386,7 @@ local function start()
 
     function vsccmd.traceback(maxlevel)
         if debug_ctx then
-            local frames = get_traceback(debug_ctx.co, maxlevel, debug_ctx.pauseline)
+            local frames = get_traceback(debug_ctx.co, maxlevel)
             skynet.retpack(frames)
         else
             skynet.ret()
@@ -415,7 +421,9 @@ local function start()
     local co = coroutine.running()
     assert(co == debug.getregistry()[1], "must call in main thread")
     mainco = co
-    vscdebugaux.sethook(co, debughook, "crl")
+    if openmode == "on" then
+        vscdebugaux.sethook(co, debughook, "crl")
+    end
 end
 
 return {

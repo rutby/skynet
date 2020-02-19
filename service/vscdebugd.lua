@@ -297,7 +297,7 @@ function request.disconnect(req)
     send_response(req.command, true, req.seq)
     send_event("output", {
         category = "console",
-        output = "Lua Debugger stop!\n",
+        output = "skynet debugger stop!\n",
     })
     send_event("exited", {
         exitCode = 0,
