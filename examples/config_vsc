@@ -16,3 +16,4 @@ snax = root.."examples/?.lua;"..root.."test/?.lua"
 cpath = root.."cservice/?.so"
 
 vscdbg_open = "$vscdbg_open"
+vscdbg_bps = [=[$vscdbg_bps]=]

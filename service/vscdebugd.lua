@@ -360,6 +360,12 @@ skynet.start(function()
         end
     end)
 
+    local pbs = skynet.getenv("vscdbg_bps")
+    local ok, bps = pcall(cjson, encode, pbs)
+    if ok then
+        breakpoints = bps
+    end
+
     stdin = socket.stdin()
     skynet.fork(function()
         process_requests()
