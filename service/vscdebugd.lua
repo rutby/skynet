@@ -107,10 +107,15 @@ local function process_requests()
         local req = recv_request()
         if req and req.command then
             local func = request[req.command]
-            if func and func(req) then
-                break
-            elseif not func then
+            if not func then
                 send_response(req.command, false, req.seq, string.format("%s not yet implemented", req.command))
+            else
+                local ok, brk = pcall(func, req)
+                if not ok then
+                    skynet.error("process_requests error: ", req.command, brk)
+                elseif brk then
+                    break
+                end
             end
         end
     end
@@ -317,7 +322,7 @@ function command.service_start(addr)
 end
 
 function command.service_exit(addr)
-    addressmap[addressmap] = false
+    addressmap[addr] = false
 end
 
 function command.pause(addr, reason)

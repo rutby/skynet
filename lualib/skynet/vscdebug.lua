@@ -1,38 +1,6 @@
 local skynet_suspend
 local coroutine_resume
 
-local function init(skynet, import)
-    skynet_suspend = import.suspend
-    coroutine_resume = import.resume
-    if skynet.getenv("vscdbg_open") == nil or skynet.getenv("logger") ~= "vscdebuglog" then
-        return 
-    end
-
-    local ori_skynet_error = skynet.error
-    skynet.error = function(...)
-        local level = skynet.__vsclog_level or 0
-        local info = debug.getinfo(level + 2, "Sl")
-        if info then
-            local t = { ... }
-            for i = 1, #t do
-                t[i] = tostring(t[i])
-            end
-            local msg = table.concat(t, '\t')
-            local line = info.currentline or 0
-            local source
-            if info.source and info.source:sub(1, 1) == "@" then
-                source = info.source:sub(2)
-            else
-                source = info.source
-            end
-            msg = string.format("co.vsc.db.%d|%s|%s", line, source, msg)
-            ori_skynet_error(msg)
-        else
-            ori_skynet_error(...)
-        end
-    end
-end
-
 local function start()
     local skynet = require "skynet"
     local openmode = skynet.getenv("vscdbg_open")
@@ -409,7 +377,7 @@ local function start()
         local ok, vars = pcall(get_vars, debug_ctx.co, refid)
         skynet.retpack(ok, vars)
     end
-    
+
     skynet.init(function()
         vscdebugd = skynet.uniqueservice("vscdebugd")
         skynet.call(vscdebugd, "lua", "service_start")
@@ -430,7 +398,50 @@ local function start()
     end
 end
 
+local function init(skynet, import)
+    skynet_suspend = import.suspend
+    coroutine_resume = import.resume
+    if skynet.getenv("vscdbg_open") == nil then
+        return 
+    end
+
+    if skynet.getenv("logger") == "vscdebuglog" then
+        local ori_skynet_error = skynet.error
+        skynet.error = function(...)
+            local level = skynet.__log_level or 0
+            local info = debug.getinfo(level + 2, "Sl")
+            if info then
+                local t = { ... }
+                for i = 1, #t do
+                    t[i] = tostring(t[i])
+                end
+                local msg = table.concat(t, '\t')
+                local line = info.currentline or 0
+                local source
+                if info.source and info.source:sub(1, 1) == "@" then
+                    source = info.source:sub(2)
+                else
+                    source = info.source
+                end
+                msg = string.format("co.vsc.db.%d|%s|%s", line, source, msg)
+                ori_skynet_error(msg)
+            else
+                ori_skynet_error(...)
+            end
+        end
+    end
+
+    local ori_skynet_start = skynet.start
+    skynet.start = function(start_func)
+        local source = debug.getinfo(start_func, "S").source
+        if not source:find("skynet/service") then
+            skynet.error("start debug: ", SERVICE_NAME)
+            start()
+        end
+        ori_skynet_start(start_func)
+    end
+end
+
 return {
     init = init,
-    start = start,
 }
