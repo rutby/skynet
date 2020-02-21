@@ -302,7 +302,8 @@ function request.disconnect(req)
     send_event("exited", {
         exitCode = 0,
     })
-    skynet.abort()
+    os.exit(0)
+    -- skynet.abort()
     return true
 end
 

@@ -10,7 +10,8 @@ local function init(skynet, import)
 
     local ori_skynet_error = skynet.error
     skynet.error = function(...)
-        local info = debug.getinfo(2, "Sl")
+        local level = skynet.__vsclog_level or 0
+        local info = debug.getinfo(level + 2, "Sl")
         if info then
             local t = { ... }
             for i = 1, #t do
