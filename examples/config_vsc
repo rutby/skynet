@@ -1,4 +1,4 @@
-root = "$vscdbg_workdir/"
+root = "./"
 thread = 4
 logger = "vscdebuglog"
 logservice = "snlua"

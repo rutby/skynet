@@ -67,6 +67,7 @@ local function start()
 
     local function breakpoints_hittest(ctx, source, line)
         source = (string.find(source, "@", 1, true) == 1) and source:sub(2) or source
+        source = vscdebugaux.abspath(source)
         local bps = breakpoints[source]
         if bps then
             for _, bp in ipairs(bps) do
@@ -110,7 +111,7 @@ local function start()
                     frame.name = "?"
                 end
                 if (islua or ismain) and info.source:sub(1, 1) == '@' then
-                    frame.source = {path = info.source:sub(2)}
+                    frame.source = {path = vscdebugaux.abspath(info.source:sub(2))}
                     frame.column = 1
                 else
                     frame.source = {presentationHint = "deemphasize"}
@@ -405,10 +406,11 @@ local function init(skynet, import)
         return 
     end
 
+    local vscdebugaux = require "skynet.vscdebugaux"
     if skynet.getenv("logger") == "vscdebuglog" then
         local ori_skynet_error = skynet.error
         skynet.error = function(...)
-            local level = skynet.__log_level or 0
+            local level = skynet.vsclog_level or 0
             local info = debug.getinfo(level + 2, "Sl")
             if info then
                 local t = { ... }
@@ -419,7 +421,7 @@ local function init(skynet, import)
                 local line = info.currentline or 0
                 local source
                 if info.source and info.source:sub(1, 1) == "@" then
-                    source = info.source:sub(2)
+                    source = vscdebugaux.abspath(info.source:sub(2))
                 else
                     source = info.source
                 end
@@ -434,7 +436,7 @@ local function init(skynet, import)
     local ori_skynet_start = skynet.start
     skynet.start = function(start_func)
         local source = debug.getinfo(start_func, "S").source
-        if not source:find("skynet/service") then
+        if not source:find("service/") then
             skynet.error("start debug: ", SERVICE_NAME)
             start()
         end

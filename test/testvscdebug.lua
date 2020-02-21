@@ -1,5 +1,4 @@
 -- vscdebug
-require("skynet.vscdebug").start()
 local skynet = require "skynet"
 
 
@@ -22,7 +21,7 @@ local function dosomething()
 			t[i] = tostring(t[i])
 		end
 		local msg = table.concat(t, '')
-		skynet.error(mode, coroutine.running(), msg)
+		-- skynet.error(mode, coroutine.running(), msg)
 		error("error")
 		return msg
 	end
@@ -62,7 +61,7 @@ skynet.start(function()
 	while true do
 		local msg = skynet.call(slaves[(i % #slaves)+1], "lua", "master call: " .. i)
 		i = i + 1
-		skynet.error(msg)
+		-- skynet.error(msg)
 		skynet.sleep(300)
 	end
 end)
