@@ -436,9 +436,12 @@ local function init(skynet, import)
     local ori_skynet_start = skynet.start
     skynet.start = function(start_func)
         local source = debug.getinfo(start_func, "S").source
-        if not source:find("service/") then
-            skynet.error("start debug: ", SERVICE_NAME)
-            start()
+        if source and source:sub(1, 1) == "@" then
+            source = vscdebugaux.abspath(source:sub(2))
+            if not source:find("/skynet/service/") then
+                skynet.error("start debug: ", SERVICE_NAME)
+                start()
+            end
         end
         ori_skynet_start(start_func)
     end
