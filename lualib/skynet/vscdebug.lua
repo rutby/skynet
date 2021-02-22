@@ -438,7 +438,7 @@ local function init(skynet, import)
         local source = debug.getinfo(start_func, "S").source
         if source and source:sub(1, 1) == "@" then
             source = vscdebugaux.abspath(source:sub(2))
-            if not source:find("/service/") then
+            if not source:find("/skynet/service/") then
                 skynet.error("start debug: ", SERVICE_NAME)
                 start()
             end
