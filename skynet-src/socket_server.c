@@ -1024,7 +1024,7 @@ send_socket(struct socket_server *ss, struct request_send * request, struct sock
 		so.free_func((void *)request->buffer);
 		return -1;
 	}
-	if (send_buffer_empty(s) && type == SOCKET_TYPE_CONNECTED) {
+	if (send_buffer_empty(s)) {
 		if (s->protocol == PROTOCOL_TCP) {
 			append_sendbuffer(ss, s, request);	// add to high priority list, even priority == PRIORITY_LOW
 		} else {
@@ -1148,8 +1148,9 @@ close_socket(struct socket_server *ss, struct request_close *request, struct soc
 		int r = shutdown_read ? -1 : SOCKET_CLOSE;
 		force_close(ss,s,&l,result);
 		return r;
-	} else if (!shutdown_read) {
-		s->closing = true;
+	}
+	s->closing = true;
+	if (!shutdown_read) {
 		// don't read socket after socket.close()
 		close_read(ss, s, result);
 		return SOCKET_CLOSE;
@@ -1407,74 +1408,17 @@ ctrl_cmd(struct socket_server *ss, struct socket_message *result) {
 	return -1;
 }
 
-struct stream_buffer {
-	char * buf;
-	int sz;
-};
-
-static char *
-reserve_buffer(struct stream_buffer *buffer, int sz) {
-	if (buffer->buf == NULL) {
-		buffer->buf = (char *)MALLOC(sz);
-		return buffer->buf;
-	} else {
-		char * newbuffer = (char *)MALLOC(sz + buffer->sz);
-		memcpy(newbuffer, buffer->buf, buffer->sz);
-		char * ret = newbuffer + buffer->sz;
-		FREE(buffer->buf);
-		buffer->buf = newbuffer;
-		return ret;
-	}
-}
-
-static int
-read_socket(struct socket *s, struct stream_buffer *buffer) {
-	int sz = s->p.size;
-	buffer->buf = NULL;
-	buffer->sz = 0;
-	int rsz = sz;
-	for (;;) {
-		char *buf = reserve_buffer(buffer, rsz);
-		int n = (int)read(s->fd, buf, rsz);
-		if (n <= 0) {
-			if (buffer->sz == 0) {
-				// read nothing
-				FREE(buffer->buf);
-				return n;
-			} else {
-				// ignore the error or hang up, returns buffer
-				// If socket is hang up, SOCKET_CLOSE will be send later.
-				//    (buffer->sz should be 0 next time)
-				break;
-			}
-		}
-		buffer->sz += n;
-		if (n < rsz) {
-			break;
-		}
-		// n == rsz, read again ( and read more )
-		rsz *= 2;
-	}
-	int r = buffer->sz;
-	if (r > sz) {
-		s->p.size = sz * 2;
-	} else if (sz > MIN_READ_BUFFER && r*2 < sz) {
-		s->p.size = sz / 2;
-	}
-	return r;
-}
-
 // return -1 (ignore) when error
 static int
 forward_message_tcp(struct socket_server *ss, struct socket *s, struct socket_lock *l, struct socket_message * result) {
-	struct stream_buffer buf;
-	int n = read_socket(s, &buf);
+	int sz = s->p.size;
+	char * buffer = MALLOC(sz);
+	int n = (int)read(s->fd, buffer, sz);
 	if (n<0) {
+		FREE(buffer);
 		switch(errno) {
 		case EINTR:
-			break;
 		case AGAIN_WOULDBLOCK:
-			skynet_error(NULL, "socket-server: EAGAIN capture.");
 			break;
 		default:
 			// close when error
@@ -1485,6 +1429,7 @@ forward_message_tcp(struct socket_server *ss, struct socket *s, struct socket_lo
 		return -1;
 	}
 	if (n==0) {
+		FREE(buffer);
 		if (s->closing) {
 			// Rare case : if s->closing is true, reading event is disable, and SOCKET_CLOSE is raised.
 			if (nomore_sending_data(s)) {
@@ -1508,7 +1453,7 @@ forward_message_tcp(struct socket_server *ss, struct socket *s, struct socket_lo
 
 	if (halfclose_read(s)) {
 		// discard recv data (Rare case : if socket is HALFCLOSE_READ, reading event is disable.)
-		FREE(buf.buf);
+		FREE(buffer);
 		return -1;
 	}
 
@@ -1517,7 +1462,15 @@ forward_message_tcp(struct socket_server *ss, struct socket *s, struct socket_lo
 	result->opaque = s->opaque;
 	result->id = s->id;
 	result->ud = n;
-	result->data = buf.buf;
+	result->data = buffer;
+
+	if (n == sz) {
+		s->p.size *= 2;
+		return SOCKET_MORE;
+	} else if (sz > MIN_READ_BUFFER && n*2 < sz) {
+		s->p.size /= 2;
+	}
+
 	return SOCKET_DATA;
 }
 
@@ -1687,7 +1640,7 @@ clear_closed_event(struct socket_server *ss, struct socket_message * result, int
 			struct event *e = &ss->ev[i];
 			struct socket *s = e->s;
 			if (s) {
-				if (socket_invalid(s, id)) {
+				if (socket_invalid(s, id) && s->id == id) {
 					e->s = NULL;
 					break;
 				}
@@ -1756,6 +1709,10 @@ socket_server_poll(struct socket_server *ss, struct socket_message * result, int
 				int type;
 				if (s->protocol == PROTOCOL_TCP) {
 					type = forward_message_tcp(ss, s, &l, result);
+					if (type == SOCKET_MORE) {
+						--ss->event_index;
+						return SOCKET_DATA;
+					}
 				} else {
 					type = forward_message_udp(ss, s, &l, result);
 					if (type == SOCKET_UDP) {
