@@ -101,9 +101,9 @@ static int sethook(lua_State *L) {
 }
 
 // () -> int
-static lua_Integer cur_seq = 0;
+static ATOM_INT cur_seq = 0;
 static int nextseq(lua_State *L) {
-    uint32_t seq = ATOM_FINC(&cur_seq) + 1;
+    int seq = ATOM_FINC(&cur_seq) + 1;
     lua_pushinteger(L, seq);
     return 1;
 }
