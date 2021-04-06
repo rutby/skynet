@@ -1421,8 +1421,6 @@ forward_message_tcp(struct socket_server *ss, struct socket *s, struct socket_lo
 		case AGAIN_WOULDBLOCK:
 			break;
 		default:
-			// close when error
-			force_close(ss, s, l, result);
 			result->data = strerror(errno);
 			return SOCKET_ERR;
 		}
@@ -1674,10 +1672,11 @@ socket_server_poll(struct socket_server *ss, struct socket_message * result, int
 			ss->event_index = 0;
 			if (ss->event_n <= 0) {
 				ss->event_n = 0;
-				if (errno == EINTR) {
-					continue;
+				int err = errno;
+				if (err != EINTR) {
+					skynet_error(NULL, "socket-server: %s", strerror(err));
 				}
-				return -1;
+				continue;
 			}
 		}
 		struct event *e = &ss->ev[ss->event_index++];
@@ -1737,7 +1736,6 @@ socket_server_poll(struct socket_server *ss, struct socket_message * result, int
 				return type;
 			}
 			if (e->error) {
-				// close when error
 				int error;
 				socklen_t len = sizeof(error);  
 				int code = getsockopt(s->fd, SOL_SOCKET, SO_ERROR, &error, &len);  
@@ -1749,18 +1747,15 @@ socket_server_poll(struct socket_server *ss, struct socket_message * result, int
 				} else {
 					err = "Unknown error";
 				}
-				force_close(ss, s, &l, result);
 				result->data = (char *)err;
 				return SOCKET_ERR;
 			}
-			if(e->eof) {
+			if (e->eof) {
 				// For epoll (at least), FIN packets are exchanged both ways.
 				// See: https://stackoverflow.com/questions/52976152/tcp-when-is-epollhup-generated
+				int halfclose = halfclose_read(s);
 				force_close(ss, s, &l, result);
-				if (halfclose_read(s)) {
-					// Already rasied SOCKET_CLOSE
-					return -1;
-				} else {
+				if (!halfclose) {
 					return SOCKET_CLOSE;
 				}
 			}
