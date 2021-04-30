@@ -366,7 +366,7 @@ skynet.start(function()
         end
     end)
 
-    local pbs = skynet.getenv("vscdbg_bps")
+    local pbs = os.getenv("vscdbg_bps")
     local ok, bps = pcall(cjson.decode, pbs)
     if ok then
         breakpoints = bps

@@ -3,7 +3,7 @@ local coroutine_resume
 
 local function start()
     local skynet = require "skynet"
-    local openmode = skynet.getenv("vscdbg_open")
+    local openmode = os.getenv("vscdbg_open")
     if openmode == nil then
         return 
     end
@@ -402,7 +402,7 @@ end
 local function init(skynet, import)
     skynet_suspend = import.suspend
     coroutine_resume = import.resume
-    if skynet.getenv("vscdbg_open") == nil then
+    if os.getenv("vscdbg_open") == nil then
         return 
     end
 
@@ -438,7 +438,7 @@ local function init(skynet, import)
         local source = debug.getinfo(start_func, "S").source
         if source and source:sub(1, 1) == "@" then
             source = vscdebugaux.abspath(source:sub(2))
-			local service_path = skynet.getenv("vscdbg_service") or "./service"
+			local service_path = os.getenv("vscdbg_service") or "./service"
             local service_path = vscdebugaux.abspath(service_path)
 			skynet.error(string.format("source=%s, service=%s", source, service_path))
             if not source:find(service_path) then
