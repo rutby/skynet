@@ -15,7 +15,7 @@ option("opt_jemalloc")
 	set_showmenu(true)
 	set_description("Use jemalloc")
 	after_check(function (option)
-		if is_plat("macosx") then
+		if not is_plat("linux") then
 			option:enable(false)
 		end
 	end)
@@ -42,7 +42,7 @@ target("lua")
 	set_default(false)
 	on_build(function (target)
 		local olddir = os.cd("3rd/lua")
-		os.exec("make %s", target:plat())
+		os.exec("make")
 		os.cd(olddir)
 	end)
 target_end()
