@@ -1,8 +1,8 @@
 -- 检查支持的平台
 rule("checkplatform")
 	on_load(function (target)
-		if not is_plat("linux", "freebsd", "macosx") then
-			raise("only support linux freebsd macosx")
+		if not is_plat("linux", "bsd", "macosx") then
+			raise("only support linux bsd macosx")
 		end
 	end)
 rule_end()
@@ -118,7 +118,7 @@ target("skynet")
 		add_ldflags("-Wl,-E")
 	elseif is_plat("macosx") then
 		add_syslinks("dl")
-	elseif is_plat("freebsd") then
+	elseif is_plat("bsd") then
 		add_syslinks("rt")
 		add_ldflags("-Wl,-E")
 	end
