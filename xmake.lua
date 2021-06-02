@@ -1,4 +1,3 @@
--- 检查支持的平台
 rule("checkplatform")
 	on_load(function (target)
 		if not is_plat("linux", "bsd", "macosx") then
@@ -11,29 +10,26 @@ add_rules("checkplatform")
 ----------------------------------------------------------------------------------------------
 -- options
 
--- 是否使用jemalloc
 option("opt_jemalloc")
 	set_default(true)
 	set_showmenu(true)
 	set_description("Use jemalloc")
 	after_check(function (option)
 		if is_plat("macosx") then
-			option:enable(false)		-- 苹果默认禁用
+			option:enable(false)
 		end
 	end)
 option_end()
 
--- 是否使用pthread的lock
 option("opt_pthreadlock")
-	set_default(false)		-- 默认禁用
+	set_default(false)
 	set_showmenu(true)
 	add_defines("USE_PTHREAD_LOCK")
 	set_description("Use pthread lock")
 option_end()
 
--- 是否启用tls，以支持https
 option("opt_tls")
-	set_default(true)		-- 默认开启
+	set_default(true)
 	set_showmenu(true)
 	set_description("Enable tls")
 option_end()
@@ -54,7 +50,6 @@ target_end()
 ----------------------------------------------------------------------------------------------
 -- jemalloc
 
--- 编译jemalloc
 target("jemalloc")
 	set_kind("phony")
 	set_default(false)
@@ -74,8 +69,7 @@ target("jemalloc")
 	end)
 target_end()
 
--- 更新jemalloc
-target("update3rd")
+target("upjemalloc")
 	set_kind("phony")
 	set_default(false)
 	on_build(function (target)
@@ -86,14 +80,13 @@ target_end()
 ----------------------------------------------------------------------------------------------
 -- skynet
 
-add_includedirs("3rd/lua")					-- lua目录
-add_includedirs("skynet-src")				-- skynet路径
+add_includedirs("3rd/lua")
+add_includedirs("skynet-src")
 set_symbols("debug")						-- -g
 set_optimize("faster")						-- -O2
 set_warnings("all")							-- -Wall
 add_options("opt_pthreadlock")
 
--- skynet执行程序
 target("skynet")
 	set_kind("binary")
 	add_files("skynet-src/*.c")
