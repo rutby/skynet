@@ -93,17 +93,21 @@ target("skynet")
 	set_targetdir(".")
 	-- lua
 	add_deps("lua")
-	add_links("lua")
-	add_linkdirs("3rd/lua")
 	-- jemalloc
 	add_options("opt_jemalloc")
 	if has_config("opt_jemalloc") then
 		add_deps("jemalloc")
-		add_links("jemalloc_pic")
-		add_linkdirs("3rd/jemalloc/lib")
 	else
 		add_defines("NOUSE_JEMALLOC")
 	end
+	before_link(function (target)
+		target:add("links", "lua")
+		target:add("linkdirs", "3rd/lua")
+		if has_config("opt_jemalloc") then
+			target:add("links", "jemalloc_pic")
+			target:add("linkdirs", "3rd/jemalloc/lib")
+		end
+    end)
 	-- flags
 	add_syslinks("pthread", "m")
 	if is_plat("linux") then
