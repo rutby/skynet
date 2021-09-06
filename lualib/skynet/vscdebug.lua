@@ -441,7 +441,7 @@ local function init(skynet, import)
 			local service_path = os.getenv("vscdbg_service") or "./service"
 			local service_path = vscdebugaux.abspath(service_path)
 			skynet.error(string.format("source=%s, service=%s", source, service_path))
-			if not source:find(service_path) then
+			if not source:find(service_path, 1, true) then
 				skynet.error("start debug: ", SERVICE_NAME)
 				start()
 			end
