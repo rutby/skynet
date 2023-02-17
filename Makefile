@@ -16,6 +16,15 @@ LUA_INC ?= 3rd/lua
 
 $(LUA_STATICLIB) :
 	cd 3rd/lua && $(MAKE) CC='$(CC) -std=gnu99' $(PLAT)
+	
+# zlib
+ 
+ZIP_STATICLIB := 3rd/zlib/libz.a
+ZIP_LIB ?= $(ZIP_STATICLIB)
+LUA_INC ?= 3rd/zlib
+ 
+$(ZIP_STATICLIB) :
+ 	cd 3rd/zlib && $(MAKE) CC='$(CC) -std=gnu99'
 
 # https : turn on TLS_MODULE to add https support
 
@@ -53,7 +62,7 @@ update3rd :
 CSERVICE = snlua logger gate harbor
 LUA_CLIB = skynet \
   client \
-  bson md5 sproto lpeg cjson $(TLS_MODULE)
+  bson md5 sproto lpeg cjson zlib $(TLS_MODULE)
 
 LUA_CLIB_SKYNET = \
   lua-skynet.c lua-seri.c \
@@ -110,6 +119,9 @@ $(LUA_CLIB_PATH)/md5.so : 3rd/lua-md5/md5.c 3rd/lua-md5/md5lib.c 3rd/lua-md5/com
 $(LUA_CLIB_PATH)/cjson.so : 3rd/lua-cjson/lua_cjson.c 3rd/lua-cjson/fpconv.c 3rd/lua-cjson/strbuf.c | $(LUA_CLIB_PATH)
 	$(CC) $(CFLAGS) $(SHARED) -I3rd/lua-cjson $^ -o $@ 
 
+$(LUA_CLIB_PATH)/zlib.so : $(ZIP_STATICLIB) 3rd/zlib/lua_zlib.c | $(LUA_CLIB_PATH)
+	$(CC) $(CFLAGS) $(SHARED) -I3rd/zlib -L3rd/zlib -lz  $^ -o $@
+
 $(LUA_CLIB_PATH)/client.so : lualib-src/lua-clientsocket.c lualib-src/lua-crypt.c lualib-src/lsha1.c | $(LUA_CLIB_PATH)
 	$(CC) $(CFLAGS) $(SHARED) $^ -o $@ -lpthread
 
@@ -132,4 +144,4 @@ ifneq (,$(wildcard 3rd/jemalloc/Makefile))
 endif
 	cd 3rd/lua && $(MAKE) clean
 	rm -f $(LUA_STATICLIB)
-
+	cd 3rd/zlib && $(MAKE) clean
