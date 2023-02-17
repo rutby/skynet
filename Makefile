@@ -28,9 +28,9 @@ $(ZIP_STATICLIB) :
 
 # https : turn on TLS_MODULE to add https support
 
-# TLS_MODULE=ltls
-TLS_LIB=
-TLS_INC=
+TLS_MODULE=ltls
+TLS_LIB="$(shell brew --prefix openssl)/lib"
+TLS_INC="$(shell brew --prefix openssl)/include"
 
 # jemalloc
 
