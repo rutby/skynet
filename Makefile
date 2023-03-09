@@ -24,13 +24,13 @@ ZIP_LIB ?= $(ZIP_STATICLIB)
 LUA_INC ?= 3rd/zlib
  
 $(ZIP_STATICLIB) :
- 	cd 3rd/zlib && $(MAKE) CC='$(CC) -std=gnu99'
+	cd 3rd/zlib && $(MAKE) CC='$(CC) -std=gnu99'
 
 # https : turn on TLS_MODULE to add https support
 
 TLS_MODULE=ltls
-TLS_LIB="$(shell brew --prefix openssl)/lib"
-TLS_INC="$(shell brew --prefix openssl)/include"
+TLS_LIB=
+TLS_INC=
 
 # jemalloc
 
