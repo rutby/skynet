@@ -483,6 +483,7 @@ end
 
 skynet.now = c.now
 skynet.hpc = c.hpc	-- high performance counter
+skynet.mstime = c.mstime
 
 local traceid = 0
 function skynet.trace(info)

@@ -35,6 +35,18 @@ get_time() {
 #endif
 }
 
+#ifdef __linux__
+#include <sys/time.h>
+#endif 
+static int lmstime(lua_State *L)
+{
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    lua_pushinteger(L, tv.tv_sec);
+    lua_pushinteger(L, tv.tv_usec);
+    return 2;
+}
+
 struct snlua {
 	lua_State * L;
 	struct skynet_context * ctx;
@@ -491,6 +503,7 @@ luaopen_skynet_core(lua_State *L) {
 		{ "harbor", lharbor },
 		{ "callback", lcallback },
 		{ "trace", ltrace },
+        { "mstime", lmstime},
 		{ NULL, NULL },
 	};
 
